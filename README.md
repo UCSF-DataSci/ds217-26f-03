@@ -7,8 +7,9 @@ assignment/
 ├── data/bp_readings.csv    # supplied readings; keep this file exactly as handed out
 ├── analysis.py             # starter script: the CSV loader is written, the analysis is yours
 ├── requirements.txt        # supplied: the one direct dependency this project installs
-├── check_assignment.py     # supplied: run it to check the shape of your work; keep unchanged
+├── check_assignment.py     # supplied: run it to check your work; keep unchanged
 ├── grading.py, _public_checks.py  # supplied: the checks themselves; keep unchanged
+├── test_assignment.py, .github/  # supplied: run the checks on GitHub; keep unchanged
 ├── .python-version         # you create in Task 1
 └── output/
     ├── environment.txt             # you generate in Task 1
@@ -28,18 +29,11 @@ P0001,M06,111,122, ... ,108
 
 Leave this file exactly as it ships: the checks that grade your answers recompute them from it.
 
-## Where your work is judged
+## Setup
 
-Grading happens in two places, and both read only your committed artifacts. Neither ever runs or reads your Python code, so any way of producing a correct artifact counts.
+Fork the assignment repository on GitHub and clone your fork the way Lecture 01 did: Command Palette → **Git: Clone**, paste your fork's URL, pick a folder, and open it. Then open **Terminal → New Terminal** in VS Code at the assignment directory (Ctrl+Shift+backtick, also Control on Mac). If you use a native terminal or WSL Ubuntu instead, `cd` into the assignment directory first. Run `ls data` and expect `bp_readings.csv`. This clone is a new repository, so before your first commit run Lecture 02's two `git config user.name "..."` and `git config user.email "..."` lines in this terminal, with your name and GitHub noreply email.
 
-| Where | What it checks | What it cannot tell you |
-| --- | --- | --- |
-| `python check_assignment.py`, in your repository | The shape of each artifact: the file is there, it is readable text, it carries the required labels, and each value is a number or a label in a range a clinician would accept. | Whether a value is right. The answers are not in your repository. |
-| GitHub Actions, on every push | The same shape checks, plus every answer compared with the value recomputed from `data/bp_readings.csv`. | n/a |
-
-Run the local checks to catch a missing file, a missing key, or a typo before you push; push to find out whether the analysis is right.
-
-Work in `03/assignment` or its standalone repository. In VS Code, sync `main` and use **Git: Create Branch** to create `feature/numpy-analysis`, then open **Terminal → New Terminal** at the assignment directory. If you use a native terminal or WSL Ubuntu instead, `cd` into the assignment directory first.
+Switch to `main`, select **Sync Changes** if Source Control shows it, and use **Git: Create Branch** to create `feature/numpy-analysis`. Work on that branch until the Submit section.
 
 > **Windows:** work in the **WSL: Ubuntu** window from Lecture 01's setup. Task 2 uses `tail`, `cut`, `sort`, `uniq`, and `wc`, which native PowerShell does not have. Git Bash also provides them; there the environment activates with `source .venv/Scripts/activate` instead.
 
@@ -58,8 +52,8 @@ uv pip install -r requirements.txt
 
 `uv python pin` writes the `.python-version` file for you; commit it.
 
-> **Checkpoint: `.python-version`**
-> Records the course interpreter series, and `requirements.txt` still pins numpy.
+> **Checkpoint: `requirements.txt`**
+> Still pins numpy as `numpy==<version>`.
 
 ### 1.2 Save an environment probe
 
@@ -80,7 +74,7 @@ echo "python: $(python --version)" > output/environment.txt
 Lecture 03 gives the one-line Python commands that print the installed NumPy version and the interpreter path.
 
 > **Checkpoint: `output/environment.txt`**
-> Three lines: a 3.13 interpreter, the numpy version `requirements.txt` pins, and an interpreter path inside your project's `.venv`.
+> Three lines: the Python version (not graded), the numpy version `requirements.txt` pins, and an interpreter path inside your project's `.venv`.
 
 ## Task 2: Count the dataset from the shell
 
@@ -139,7 +133,7 @@ high_monitor: <monitor id>
 | `peak_hour_column` | Which hour column has the highest mean across all patients? | Column name as written in the header | 4 |
 | `peak_hour_mean` | What is that column's mean? | mmHg | 4 |
 | `high_monitor` | Which monitor's average is highest? | Monitor id as written in the file | 4 |
-| `monitor_offset` | How far above the average of the patients on the *other* monitors does that monitor's average sit? | mmHg | 3 |
+| `monitor_offset` | How far above the average of the patients on the _other_ monitors does that monitor's average sit? | mmHg | 3 |
 | `stage2_other_monitors` | Leaving out the patients on that monitor, how many of the rest have a 12-hour mean of 140 mmHg or higher? | Whole number | 3 |
 
 How the values are read:
@@ -163,14 +157,27 @@ python analysis.py
 python check_assignment.py
 ```
 
-These checks read your committed artifacts and confirm that each one is well formed. They do not hold the answers, so a complete run says only that:
+`check_assignment.py` runs the same checks GitHub runs. They read only `requirements.txt` and your files in `output/`, and recompute every answer from the supplied `data/bp_readings.csv`. They never run or read your Python code, so any way of producing a correct artifact counts.
+
+Each check prints `PASS` or `FIX` and the points it earned, and a `FIX` says what to fix on the line beneath it. Before Task 1, for example, the first check reports:
 
 ```text
-19 of 19 shape checks passed.
-These checks confirm the shape of your artifacts; your values are checked when you push.
+[FIX ]   0/13  environment probe
+         output/environment.txt is missing; commit it as a regular file.
 ```
 
-It reports a count rather than a score, because it has not looked at a single answer. When something is off it names the artifact to revise. Your answers are compared with the readings when you push, and the GitHub Actions run reports the same nineteen checks, each carrying its own points.
+Fix what it names, rerun whatever produces that artifact and then the checks, and repeat until every check passes. A clean local run ends with:
+
+```text
+[PASS]   4/4   answer: high_monitor
+[PASS]   3/3   answer: monitor_offset
+[PASS]   3/3   answer: stage2_other_monitors
+
+Score: 100/100
+All checks passed.
+```
+
+Every push also runs GitHub Actions, which downloads the course's current copy of the checks and reruns them on the files you committed and pushed. That run is what counts, and a check corrected after handout reaches you there on your next push.
 
 ### Completion contract
 
@@ -178,8 +185,7 @@ Grading totals 100 points and reads these files relative to the assignment root.
 
 | Artifact | Complete when | Check | Points |
 | --- | --- | --- | ---: |
-| `.python-version`, `requirements.txt` | They record the course interpreter series and a pinned numpy version. | environment records | 5 |
-| `output/environment.txt` | Its `python`, `numpy`, and `interpreter` lines agree with those records and name an interpreter inside `.venv`. | environment probe | 8 |
+| `output/environment.txt` | Its `numpy` line matches the pin in `requirements.txt`, and its `interpreter` line names an interpreter inside `.venv`. The `python` line is not graded. | environment probe | 13 |
 | `output/record_count.txt` | It holds the number of patient records in the supplied CSV. | record count artifact | 10 |
 | `output/monitor_counts_<timestamp>.txt` | A timestamped file holds every monitor's patient count. | monitor counts artifact | 15 |
 | `output/vitals_summary.txt` | It has a readable `key: value` line for all 14 keys. | summary artifact format | 12 |
@@ -191,4 +197,4 @@ Extra files and extra lines are ignored.
 
 In VS Code Source Control, stage `.python-version`, `analysis.py`, and everything in `output/`, including every timestamped counts file you kept. Commit with `Analyze telemetry ward readings`. Keep `.venv/` out of the commit; `.gitignore` already lists it.
 
-Publish or sync the branch. With no unfinished changes, switch to `main`, run **Git: Merge...**, and select `feature/numpy-analysis`. Resolve any unexpected conflict, inspect the resolution, and sync. Confirm the committed artifacts on `main` in the repository browser. GitHub Actions runs the checks automatically on every push; enable Actions once if GitHub prompts you in a fork. Each run downloads the current version of the checks, including the comparison against the supplied readings, from the course checks repository, so a correction made after the assignment was handed out reaches you on your next push. If that download fails, the run says so and falls back to the shape checks in your repository, which do not verify any answer. If a required VS Code control is unavailable, record its message and contact the instructor.
+Publish or sync the branch. With no unfinished changes, switch to `main`, run **Git: Merge...**, and select `feature/numpy-analysis`. Resolve any unexpected conflict, inspect the resolution, and sync. Confirm the committed artifacts on `main` in the repository browser. GitHub Actions runs the checks automatically on every push; enable Actions once if GitHub prompts you in a fork. If a run cannot download the course's current checks, it grades with the copy in your repository and says so in its log. If your local run and the GitHub run ever disagree, the GitHub run counts, because it uses the course's current checks. If a required VS Code control is unavailable, record its message and contact the instructor.
